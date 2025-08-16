@@ -26,13 +26,17 @@
         }
 
         // 🎵 Play Karaoke
-        player.src = `http://localhost:3000/karaoke?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
+        player.src = `netlify/functions/karaoke?title=${encodeURIComponent(
+          title
+        )}&artist=${encodeURIComponent(artist)}`;
         player.play();
 
         // 📜 Fetch Lyrics
         try {
           const res = await fetch(
-            `http://localhost:3000/lyrics?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`
+            `netlify/functions/lyrics?title=${encodeURIComponent(
+              title
+            )}&artist=${encodeURIComponent(artist)}`
           );
 
           if (res.ok) {
