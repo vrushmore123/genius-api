@@ -1,25 +1,40 @@
-const searchSong = require('./searchSong');
-const { checkOptions } = require('./utils');
-const extractLyrics = require('./utils/extractLyrics');
+import getLyrics from "../../lyrics.js"; // import your helper
 
-/**
- * @param {({apiKey: string, title: string, artist: string, optimizeQuery: boolean}|string)} arg - options object, or Genius URL
- */
-module.exports = async function (arg) {
-	try {
-		if (arg && typeof arg === 'string') {
-			let lyrics = await extractLyrics(arg);
-			return lyrics;
-		} else if (typeof arg === 'object') {
-			checkOptions(arg);
-			let results = await searchSong(arg);
-			if (!results) return null;
-			let lyrics = await extractLyrics(results[0].url);
-			return lyrics;
-		} else {
-			throw 'Invalid argument';
-		}
-	} catch (e) {
-		throw e;
-	}
-};
+export async function handler(event, context) {
+  try {
+    const { title, artist } = event.queryStringParameters;
+
+    if (!title || !artist) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Missing title or artist" }),
+      };
+    }
+
+    const options = {
+      apiKey: process.env.GENIUS_API_KEY, // store your key in Netlify env vars
+      title,
+      artist,
+      optimizeQuery: true,
+    };
+
+    const lyrics = await getLyrics(options);
+
+    if (!lyrics) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: "Lyrics not found" }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ lyrics }),
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message }),
+    };
+  }
+}

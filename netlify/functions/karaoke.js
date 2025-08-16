@@ -1,84 +1,66 @@
-const fs = require("fs");
+import play from "play-dl";
+import getLyrics from "./getLyrics.js";
+import getSong from "./getSong.js";
 
-const readline = require("readline");
-const play = require("play-dl");
-const getLyrics = require("./getLyrics");
-const getSong = require("./getSong");
-const ytdl = require("@distube/ytdl-core"); // updated fork
+export async function handler(event, context) {
+  try {
+    const { title, artist } = event.queryStringParameters;
 
-const apiKey = "o4dFQpPnq-b7fQ6eo9YeYYxkCq-KvAUsdr6XMZVPj2Q94fxQT-ttIhsl8SPQgqxn";
+    if (!title || !artist) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Missing title or artist" }),
+      };
+    }
 
-async function fetchLyricsAndKaraoke(title, artist) {
-    const options = {
-        apiKey,
-        title,
-        artist,
-        optimizeQuery: true,
+    const options = { title, artist, optimizeQuery: true };
+
+    // 1️⃣ Lyrics
+    let lyrics = null;
+    try {
+      lyrics = await getLyrics(options);
+    } catch (e) {
+      lyrics = "❌ Lyrics not found";
+    }
+
+    // 2️⃣ Song Info
+    let songInfo = null;
+    try {
+      songInfo = await getSong(options);
+    } catch (e) {
+      songInfo = { error: "❌ Song info not found" };
+    }
+
+    // 3️⃣ Karaoke Search on YouTube
+    const searchQuery = `${title} ${artist} karaoke`;
+    const ytResults = await play.search(searchQuery, { limit: 10 });
+
+    const video = ytResults.find(
+      (v) => v.type === "video" && /karaoke|instrumental/i.test(v.title)
+    );
+
+    if (!video) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: "No karaoke version found" }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        lyrics,
+        songInfo,
+        karaoke: {
+          title: video.title,
+          url: video.url,
+        },
+      }),
     };
-
-    // 1️⃣ Fetch Lyrics
-    try {
-        const lyrics = await getLyrics(options);
-        if (lyrics) {
-            console.log("\n🎵 Lyrics:\n", lyrics);
-        } else {
-            console.log("❌ Lyrics not found");
-        }
-    } catch (err) {
-        console.error("Error fetching lyrics:", err.message);
-    }
-
-    // 2️⃣ Fetch Song Info
-    try {
-        const song = await getSong(options);
-        console.log(`\n✅ Found: ${song.title} by ${song.artist}`);
-    } catch (err) {
-        console.error("Error fetching song info:", err.message);
-    }
-
-    // 3️⃣ Search YouTube for Karaoke Version
-    try {
-        const searchQuery = `${title} ${artist} karaoke`; // force karaoke search
-        const ytResults = await play.search(searchQuery, { limit: 10 });
-
-        const video = ytResults.find(v =>
-            v.type === "video" &&
-            v.url &&
-            /karaoke|instrumental/i.test(v.title) // ensure it's karaoke
-        );
-
-        if (!video) {
-            console.log("❌ No karaoke version found");
-            return;
-        }
-
-        console.log(`\n📽️ Found karaoke video: ${video.title}`);
-        console.log(`🔗 URL: ${video.url}`);
-
-        const fileName = `karaoke-${title}-${artist}.mp3`;
-        const stream = ytdl(video.url, {
-            filter: "audioonly",
-            quality: "highestaudio"
-        });
-
-        stream.pipe(fs.createWriteStream(fileName))
-            .on("finish", () => console.log(`✅ Karaoke audio saved as ${fileName}`))
-            .on("error", err => console.error("Stream error:", err.message));
-
-    } catch (err) {
-        console.error("Error downloading karaoke audio:", err.message);
-    }
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message }),
+    };
+  }
 }
-
-// CLI Input Handling
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-
-rl.question("🎤 Enter song title: ", (title) => {
-    rl.question("🎼 Enter artist name: ", (artist) => {
-        fetchLyricsAndKaraoke(title, artist);
-        rl.close();
-    });
-});
