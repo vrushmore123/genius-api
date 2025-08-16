@@ -26,7 +26,7 @@
         }
 
         // 🎵 Play Karaoke
-        player.src = `netlify/functions/karaoke?title=${encodeURIComponent(
+        player.src = `.netlify/functions/karaoke?title=${encodeURIComponent(
           title
         )}&artist=${encodeURIComponent(artist)}`;
         player.play();
@@ -34,7 +34,7 @@
         // 📜 Fetch Lyrics
         try {
           const res = await fetch(
-            `netlify/functions/lyrics?title=${encodeURIComponent(
+            `.netlify/functions/lyrics?title=${encodeURIComponent(
               title
             )}&artist=${encodeURIComponent(artist)}`
           );
