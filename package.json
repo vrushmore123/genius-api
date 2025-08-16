@@ -14,8 +14,13 @@
 	],
 	"license": "MIT",
 	"dependencies": {
+		"@distube/ytdl-core": "^4.16.12",
 		"axios": "^1.6.7",
-		"cheerio-without-node-native": "0.20.2"
+		"cheerio-without-node-native": "0.20.2",
+		"cors": "^2.8.5",
+		"express": "^5.1.0",
+		"play-dl": "^1.9.7",
+		"ytsr": "^3.8.4"
 	},
 	"repository": {
 		"type": "git",

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Karaoke Finder</title>
+  </head>
+  <body>
+    <h1>🎤 Karaoke Finder</h1>
+    <input id="title" placeholder="Song title" />
+    <input id="artist" placeholder="Artist" />
+    <button onclick="getKaraoke()">Get Karaoke</button>
+    <br /><br />
+    <audio id="player" controls></audio>
+    <p>🎵 Lyrics:</p>
+    <pre id="lyrics"></pre>
+
+    <script>
+      async function getKaraoke() {
+        const title = document.getElementById("title").value.trim();
+        const artist = document.getElementById("artist").value.trim();
+        const player = document.getElementById("player");
+        const lyricsBox = document.getElementById("lyrics");
+
+        if (!title || !artist) {
+          lyricsBox.textContent = "Please enter both title and artist.";
+          return;
+        }
+
+        // 🎵 Play Karaoke
+        player.src = `http://localhost:3000/karaoke?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
+        player.play();
+
+        // 📜 Fetch Lyrics
+        try {
+          const res = await fetch(
+            `http://localhost:3000/lyrics?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`
+          );
+
+          if (res.ok) {
+            const data = await res.json();
+            lyricsBox.textContent = data.lyrics || "Lyrics not found.";
+          } else {
+            lyricsBox.textContent = "Lyrics not found.";
+          }
+        } catch (e) {
+          lyricsBox.textContent = "Error fetching lyrics.";
+        }
+      }
+    </script>
+  </body>
+</html>
